@@ -33,8 +33,14 @@ int main(){
 		 
 		/* Check if button B is pressed;
 		 * turn on LED matrix if it is. */
-		b_pressed = GPIO->IN & 0b00000100000000000000000000000000;	
-		a_pressed = GPIO->IN & 0b00000000000000100000000000000000;	
+		
+		b_pressed = GPIO->IN &= (1 << 26);		
+		a_pressed = GPIO->IN &= (1 << 17);
+
+		
+
+		//b_pressed = GPIO->IN & 0b00000100000000000000000000000000;	
+		//a_pressed = GPIO->IN & 0b00000000000000100000000000000000;	
 		if(!b_pressed){
 			for(int i = 13; i <= 15; i++){
 				GPIO->OUTSET = (1 << i);
