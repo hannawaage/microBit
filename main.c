@@ -2,38 +2,42 @@
 #include <stdio.h>
 #include "uart.h"
 #include "gpio.h"
+#include "gpiote.h"
+#include "ppi.h"
+#define BUTTON_A_PIN 17
+#define BUTTON_B_PIN 26
+#define SUPPLY_PIN0 13
+#define SUPPLY_PIN1 14
+#define SUPPLY_PIN2 15
 
-ssize_t _write(int fd, const void *buf, size_t count){
-	char * letter = (char *)(buf);
-	for(int i = 0; i < count; i++){
-		uart_send(*letter);
-		letter++;
-	}
-	return count;
-}
 
 int main(void) 
 {
 	// Configure LED Matrix
-	for(int i = 4; i <= 15; i++){
+	for(int i = 4; i < 13; ++i){
 		GPIO->DIRSET = (1 << i);
 		GPIO->OUTCLR = (1 << i);
 	} 
 	
 	// Configure buttons
-	GPIO->PIN_CNF[17] = 0;
-	GPIO->PIN_CNF[26] = 0;
+	GPIO->PIN_CNF[BUTTON_A_PIN] = 0; // BUTTON A
+	GPIO->PIN_CNF[BUTTON_B_PIN] = 0; // BUTTON B
 
-	int sleep = 0;
-	uart_init();
-
-	iprintf("Norway has %d counties.\n\r", 18);
-
-	while(1) 
+	GPIOTE->CONFIG[0] |= (1 << 0) | (17 << 8 ) | (2 << 16); 
+	for (int i = 1; i < 4; ++i) 
 	{
-		listen(); 
-		send_A_B(); 
-		sleep = 10000;
-		while(--sleep);
+		GPIOTE->CONFIG[i] |= (3 << 0) | ((i + 12) << 8) | (3 << 16) | (0 << 20);
 	}
+
+	for (int i = 1; i < 4; ++i) 
+	{
+		PPI->PPI_CH[i].EEP = (uint32_t)&(GPIOTE->IN[0]);
+		PPI->PPI_CH[i].TEP = (uint32_t)&(GPIOTE->OUT[i]);
+		PPI->CHENSET = (1 << i);
+	}
+	
+
+	while(1);
+	return 0; 
 }
+
